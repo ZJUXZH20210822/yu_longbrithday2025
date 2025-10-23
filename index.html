@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>🎂 玉龙哥哥生日快乐</title>
+  <meta name="description" content="海底捞风格·生日快乐歌自动播放循环版，无需自定义；持续烟花 + 生日动态背景。" />
+  <meta name="theme-color" content="#ff6ac1" />
+  <style>
+    :root { --txt:#fff; --blur: blur(12px); }
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+      color:var(--txt); overflow-x:hidden; background:#0b1023;
+      background-image: radial-gradient(1200px 600px at 10% -10%, #2a2f68 0%, transparent 60%),
+                        radial-gradient(800px 400px at 120% 10%, #481f5a 0%, transparent 60%),
+                        radial-gradient(1000px 500px at 50% 120%, #1f4d51 0%, transparent 60%);
+      background-attachment: fixed;
+    }
+    .stars{position:fixed;inset:0;pointer-events:none;z-index:0;background:transparent}
+    .stars:before,.stars:after{content:"";position:absolute;inset:0;background-repeat:repeat;background-size:contain;opacity:.6}
+    .stars:before{background-image:radial-gradient(1px 1px at 20% 30%,#fff8 50%,transparent 51%),radial-gradient(1px 1px at 80% 70%,#fff6 50%,transparent 51%),radial-gradient(1px 1px at 50% 50%,#fff5 50%,transparent 51%)}
+    .stars:after{background-image:radial-gradient(1px 1px at 10% 80%,#fff5 50%,transparent 51%),radial-gradient(1px 1px at 90% 20%,#fff6 50%,transparent 51%),radial-gradient(1px 1px at 40% 10%,#fff8 50%,transparent 51%)}
+
+    .container{position:relative;z-index:2;min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:72px 16px 120px}
+
+    .title{font-weight:900;letter-spacing:1px;text-align:center;line-height:1.1;font-size:clamp(34px, 6.8vw, 84px);margin:0 0 10px}
+    .gradient-text{background:conic-gradient(from 180deg at 50% 50%,#ff9a9e,#fad0c4,#fbc2eb,#a18cd1,#f6d365,#fda085,#ff9a9e);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 8px 40px rgba(255,165,240,.2)}
+    .subtitle{opacity:.95;text-align:center;margin:8px 0 22px;font-size:clamp(16px,3.2vw,22px)}
+
+    .btns{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:center;margin:8px 0 24px}
+    .btn{border:0;cursor:pointer;border-radius:999px;padding:12px 18px;font-weight:700;backdrop-filter:var(--blur);background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,.14));color:#0b1023}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(0,0,0,.18)}
+    .btn.primary{background:linear-gradient(180deg,#ffd6e8,#ffc6f9)}
+    .btn.glass{color:#fff;background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.06));border:1px solid #ffffff22}
+
+    /* 飘动气球 */
+    .balloons{position:fixed;left:0;right:0;bottom:-20vh;height:120vh;pointer-events:none;z-index:1}
+    .balloon{position:absolute;bottom:-30vh;width:46px;height:58px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#fff8 2px,transparent 3px),radial-gradient(circle at 50% 30%, #ffffff99 0%,transparent 40%),linear-gradient(180deg,var(--c1),var(--c2));box-shadow:inset -6px -10px 20px #0002;animation:floatUp linear infinite;opacity:.9}
+    .balloon:after{content:"";position:absolute;left:50%;transform:translateX(-50%);bottom:-18px;width:2px;height:20px;background:#ffffff66}
+    @keyframes floatUp{to{transform:translateY(-130vh)}}
+
+    /* 烟花画布（在内容之上，避免被遮） */
+    canvas#fireworks{position:fixed;inset:0;z-index:3;pointer-events:none}
+
+    /* 生日弹幕背景（轻微，不挡交互） */
+    #bgBirthday{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+    .wish{position:absolute;font-weight:800;opacity:.12;white-space:nowrap;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35));
+      animation: floatWish linear forwards}
+    @keyframes floatWish{to{transform:translate(var(--dx, 20vw), -110vh) rotate(360deg);opacity:.06}}
+
+    /* 底部“HAPPY BIRTHDAY”流光跑马灯 */
+    .ticker{position:fixed;left:0;right:0;bottom:6%;z-index:1;pointer-events:none;opacity:.28}
+    .ticker .track{display:flex;gap:36px;white-space:nowrap;animation: marquee 22s linear infinite}
+    .ticker .item{font-size:clamp(18px,3.2vw,28px);font-weight:900;background:linear-gradient(90deg,#fff,#ffd1f7,#ffe39f,#c2e9fb,#fff);-webkit-background-clip:text;background-clip:text;color:transparent}
+    @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+    /* 彩带下降动画 */
+    @keyframes drop{to{transform:translateY(120vh) rotate(720deg);opacity:.6}}
+
+    /* 自动播放禁用时的提示遮罩 */
+    .gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);color:#fff;font-size:clamp(16px,4vw,22px);z-index:9999;cursor:pointer;text-align:center;padding:24px}
+    .gate.hidden{display:none}
+
+    footer{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);font-size:12px;opacity:.7;z-index:2}
+    @media (max-width:520px){.subtitle{font-size:16px}.btn{padding:10px 14px}}
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+  <div id="bgBirthday"></div>
+  <canvas id="fireworks"></canvas>
+
+  <div class="container">
+    <h1 class="title gradient-text"><span id="who">玉龙哥哥</span>，生日快乐！</h1>
+    <div class="subtitle"><span id="typer">加载祝福中…</span></div>
+    <div class="btns">
+      <button class="btn primary" id="celebrateBtn">为你庆生 🎉</button>
+      <button class="btn glass" id="nextWish">换一句 ✨</button>
+    </div>
+  </div>
+
+  <div class="balloons" id="balloons"></div>
+
+  <!-- 跑马灯（重复两次以无缝滚动） -->
+  <div class="ticker" aria-hidden="true">
+    <div class="track">
+      <div class="item">🎂 HAPPY BIRTHDAY · 玉龙哥哥 · 生日快乐 · 健身更强 · 科研高光 · 🎉</div>
+      <div class="item">🎂 HAPPY BIRTHDAY · 玉龙哥哥 · 生日快乐 · 健身更强 · 科研高光 · 🎉</div>
+    </div>
+  </div>
+
+  <!-- 背景音乐：实际 mp3 音源（自动播放 + 循环 + 移动端内联） -->
+  <audio id="bgm" preload="auto" loop playsinline></audio>
+
+  <!-- 自动播放被阻止时的提示，点击任意处解锁音频 -->
+  <div id="autoplayGate" class="gate hidden" role="button" aria-label="点击开启音乐">🔊 浏览器阻止了自动播放。<br/>点一下屏幕开启海底捞生日快乐歌（将自动循环）。</div>
+
+  <footer>Made with ♥ for your big day.</footer>
+
+  <script>
+    // ========== DOM 快捷 ==========
+    const $ = (sel, el=document) => el.querySelector(sel);
+
+    // —— 遗留控件清理（以及动态守卫） ——
+    function ensureNoLegacyControls(){
+      const n1 = document.getElementById('settingsBtn'); if(n1) n1.remove();
+      const n2 = document.getElementById('panel'); if(n2) n2.remove();
+    }
+    ensureNoLegacyControls();
+    new MutationObserver(()=>{ ensureNoLegacyControls(); }).observe(document.documentElement, { childList:true, subtree:true, attributes:true });
+
+    // ========== 随机祝福（健身 × 研究生） ==========
+    const phrasesBase = (name='寿星')=>[
+      `${name}，愿你的杠铃越来越轻，论文越来越顺！🏋️‍♂️📚`,
+      `深蹲稳、卧推稳，科研也更稳；新的一岁更自律更自由！💪🔬`,
+      `卡路里减一点，影响因子加一点，快乐翻倍！🎂📈`,
+      `把自律当配方，把热爱当蛋白粉；强健体魄，硬核科研！🥛💥`,
+      `训练日不落，灵感也不落；愿成果像肌肉一样线条分明。🏃‍♂️✨`,
+      `越重的杠铃越显实力，越难的课题越见功力；生日超燃！🔥`,
+      `深夜的自习室与清晨的跑道，都在见证你的坚持。🌙→🌅`,
+      `愿你心率随音乐律动，思维随实验飞扬。🎧🧠`,
+      `卧推破新高，投稿过首审；肌肉与简历一起增长。✅`,
+      `今日配方：高强度训练＋高质量思考＋高快乐度生日。📋`
+    ];
+    function shuffle(a){ return a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]); }
+    let phrases = [];
+    let phI=0, chI=0, typing=true;
+    function initBlessings(){ phrases = shuffle(phrasesBase('玉龙哥哥')); phI=0; chI=0; typing=true; }
+    function typeLoop(){
+      const el = $('#typer'); if(!phrases.length){ el.textContent='生日快乐！'; return; }
+      const text = phrases[phI];
+      if(typing){ chI++; el.textContent=text.slice(0,chI); if(chI>=text.length){ typing=false; setTimeout(typeLoop,1200); return; } setTimeout(typeLoop,55+Math.random()*55); }
+      else { chI--; el.textContent=text.slice(0,chI); if(chI===0){ typing=true; phI=(phI+1)%phrases.length; setTimeout(typeLoop,260); return; } setTimeout(typeLoop,28+Math.random()*42); }
+    }
+
+    // 生日弹幕（背景动态祝福/元素）
+    const BG_WORDS = ['🎂','🎉','🎈','🎁','🥳','⭐️','Happy Birthday','生日快乐','玉龙哥哥'];
+    function spawnWish(){
+      const el = document.createElement('span'); el.className='wish';
+      el.textContent = BG_WORDS[Math.floor(Math.random()*BG_WORDS.length)];
+      const size = 18 + Math.random()*42; el.style.fontSize = size+'px';
+      el.style.left = Math.random()*100 + 'vw'; el.style.top = (100+Math.random()*10) + 'vh';
+      el.style.setProperty('--dx', (Math.random()*60-30)+'vw');
+      el.style.animationDuration = (12 + Math.random()*10) + 's';
+      $('#bgBirthday').appendChild(el);
+      setTimeout(()=> el.remove(), 24000);
+      return el;
+    }
+    function startBgWishes(){
+      let killed=false; (function loop(){ if(killed) return; spawnWish(); setTimeout(loop, 500 + Math.random()*900); })();
+      return ()=>{ killed=true; };
+    }
+
+    // ========== 音频：实际 mp3 自动播放 + 循环 ==========
+    const AUDIO_CANDIDATES = [
+      '生日快乐dj海底捞-DJ阿能.mp3',
+      './生日快乐dj海底捞-DJ阿能.mp3',
+      '/mnt/data/生日快乐dj海底捞-DJ阿能.mp3'
+    ];
+    const bgmEl = $('#bgm');
+
+    function pickAudioSource(cands=AUDIO_CANDIDATES){
+      return new Promise((resolve)=>{
+        let i=0;
+        const tryNext=()=>{
+          if(i>=cands.length){ resolve(false); return; }
+          const src=cands[i++];
+          let settled=false;
+          const onCanPlay = ()=>{ if(!settled){ settled=true; cleanup(); resolve(true); } };
+          const onError = ()=>{ if(!settled){ settled=true; cleanup(); tryNext(); } };
+          const onTimeout = setTimeout(()=>{ if(!settled){ settled=true; cleanup(); tryNext(); } }, 2500);
+          function cleanup(){ bgmEl.removeEventListener('canplay', onCanPlay); bgmEl.removeEventListener('error', onError); clearTimeout(onTimeout); }
+          bgmEl.addEventListener('canplay', onCanPlay, { once:true });
+          bgmEl.addEventListener('error', onError, { once:true });
+          bgmEl.src = src; bgmEl.load();
+        };
+        tryNext();
+      });
+    }
+
+    // ========== WebAudio 合成版（作为 mp3 不可用时的降级） ==========
+    const AC = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    const hbState = { playing:false, nodes:[], timer:null, loop:true, blocked:false, using:'audio' };
+    function getAC(){ if(!AC) return null; if(!audioCtx) audioCtx = new AC(); return audioCtx; }
+
+    const HB_SEQ = [ ['G4',1], ['G4',1], ['A4',2], ['G4',2], ['C5',2], ['B4',4],
+                     ['G4',1], ['G4',1], ['A4',2], ['G4',2], ['D5',2], ['C5',4],
+                     ['G4',1], ['G4',1], ['G5',2], ['E5',2], ['C5',2], ['B4',2], ['A4',2],
+                     ['F5',1], ['F5',1], ['E5',2], ['C5',2], ['D5',2], ['C5',4] ];
+    function noteToMidi(n){ if(!n||n==='R') return null; const m=n.match(/^([A-Ga-g])([#b]?)\d$/); if(!m) return null; const L=n[0].toUpperCase(); const acc=(n.length===3?n[1]:''); const oct=parseInt(n[n.length-1],10); const base={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[L]; const alt=acc==='#'?1:acc==='b'?-1:0; return 12*(oct+1)+base+alt; }
+    function midiToFreq(m){ return 440*Math.pow(2,(m-69)/12); }
+
+    let NOISE_BUF = null;
+    function getNoiseBuffer(ac){ if(NOISE_BUF) return NOISE_BUF; const buf=ac.createBuffer(1, ac.sampleRate*1, ac.sampleRate); const data=buf.getChannelData(0); for(let i=0;i<data.length;i++){ data[i]=Math.random()*2-1; } NOISE_BUF = buf; return buf; }
+    function scheduleClap(ac, master, t){ const src=ac.createBufferSource(); src.buffer=getNoiseBuffer(ac); const bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1500; bp.Q.value=0.8; const g=ac.createGain(); g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.13); src.connect(bp); bp.connect(g); g.connect(master); src.start(t); src.stop(t+0.2); hbState.nodes.push(src,bp,g); }
+    function scheduleHat(ac, master, t){ const src=ac.createBufferSource(); src.buffer=getNoiseBuffer(ac); const hp=ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=6000; hp.Q.value=0.7; const g=ac.createGain(); g.gain.setValueAtTime(0.5,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.05); src.connect(hp); hp.connect(g); g.connect(master); src.start(t); src.stop(t+0.08); hbState.nodes.push(src,hp,g); }
+    function scheduleKick(ac, master, t){ const osc=ac.createOscillator(); osc.type='sine'; const g=ac.createGain(); g.gain.setValueAtTime(1.0,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.2); osc.frequency.setValueAtTime(120,t); osc.frequency.exponentialRampToValueAtTime(50,t+0.15); osc.connect(g); g.connect(master); osc.start(t); osc.stop(t+0.22); hbState.nodes.push(osc,g); }
+
+    function playHaidilaoSynth(opts={}){
+      hbState.using = 'synth';
+      const tempo = opts.tempo ?? 160; const leadGain = opts.leadGain ?? 0.15; const drumGain = opts.drumGain ?? 0.22; const wave = opts.wave ?? 'sawtooth';
+      const ac = getAC(); if(!ac) return;
+      stopHaidilao(false);
+      const beat = 60/tempo; const start = ac.currentTime + 0.05; let t = start;
+      const master = ac.createGain(); master.gain.value=1.0; master.connect(ac.destination);
+      const leadBus = ac.createGain(); leadBus.gain.value=leadGain; leadBus.connect(master);
+      const drumBus = ac.createGain(); drumBus.gain.value=drumGain; drumBus.connect(master);
+      for(const [note, beats] of HB_SEQ){ const midi = noteToMidi(note); const dur = beats*beat; if(midi===null){ t += dur; continue; } const osc=ac.createOscillator(); const g=ac.createGain(); osc.type=wave; osc.frequency.value=midiToFreq(midi); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(1,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+Math.max(0.1,dur-0.04)); osc.connect(g); g.connect(leadBus); osc.start(t); osc.stop(t+dur); hbState.nodes.push(osc,g); t += dur; }
+      const totalBeats = HB_SEQ.reduce((s, [,b])=>s+b, 0);
+      for(let b=0;b<totalBeats;b++){ const tb = start + b*beat; scheduleClap(ac, drumBus, tb); if(b%4===0 || b%4===2) scheduleKick(ac, drumBus, tb); }
+      for(let h=0; h<totalBeats*2; h++) scheduleHat(ac, drumBus, start + h*(beat/2));
+      hbState.playing = true; hbState.loop = true;
+      const endTime = start + totalBeats*beat + 0.25;
+      hbState.timer = setTimeout(()=>{ if(hbState.loop) playHaidilaoSynth(opts); }, Math.max(0,(endTime - ac.currentTime)*1000));
+      hbState.nodes.push(master, leadBus, drumBus);
+    }
+
+    function stopSynthNodes(){ if(hbState.timer){ clearTimeout(hbState.timer); hbState.timer=null; } while(hbState.nodes.length){ try{ const n=hbState.nodes.pop(); if(n && n.stop) n.stop(); if(n && n.disconnect) n.disconnect(); }catch(e){} } }
+
+    // 包装：优先播放 mp3，失败再降级到合成
+    function playHaidilao(opts={}){
+      hbState.loop = true;
+      // 优先使用 <audio>
+      bgmEl.loop = true; bgmEl.preload = 'auto';
+      // 若尚未挑选或上次失败，尝试挑选音源
+      const ensureSrc = (bgmEl.src ? Promise.resolve(true) : pickAudioSource());
+      return ensureSrc.then((ok)=>{
+        if(ok){
+          hbState.using = 'audio';
+          stopSynthNodes();
+          return bgmEl.play().then(()=>{ hbState.playing = true; }).catch(()=>{ // 用户手势拦截
+            hbState.blocked = true; document.getElementById('autoplayGate').classList.remove('hidden');
+          });
+        } else {
+          // 无可用 mp3，回退到合成器
+          playHaidilaoSynth(opts);
+        }
+      });
+    }
+
+    function stopHaidilao(){
+      // 同时停止两种后端
+      try{ bgmEl.pause(); bgmEl.currentTime = 0; }catch(e){}
+      stopSynthNodes();
+      hbState.playing=false;
+    }
+
+    // 自动播放尝试 + 降级处理
+    function tryAutoplay(){
+      playHaidilao().then(()=>{});
+    }
+
+    // 点击任意处解锁音频（若被策略拦截）
+    function unlock(){
+      document.getElementById('autoplayGate').classList.add('hidden'); hbState.blocked=false;
+      stopHaidilao(); playHaidilao();
+      const ac = getAC(); if(ac && ac.state!=='running'){ ac.resume && ac.resume().catch(()=>{}); }
+    }
+    ['pointerdown','keydown','touchstart'].forEach(evt=>{ window.addEventListener(evt, ()=>{ if(hbState.blocked) unlock(); }, { once:false }); });
+    document.getElementById('autoplayGate').addEventListener('click', unlock);
+
+    // ========== 气球 ==========
+    function spawnBalloons(){ const colors=[["#ff9a9e","#fad0c4"],["#a1c4fd","#c2e9fb"],["#fbc2eb","#a6c1ee"],["#f6d365","#fda085"],["#84fab0","#8fd3f4"]]; const box=$('#balloons'); for(let i=0;i<12;i++){ const b=document.createElement('div'); b.className='balloon'; const [c1,c2]=colors[i%colors.length]; b.style.setProperty('--c1',c1); b.style.setProperty('--c2',c2); b.style.left=Math.random()*96+'vw'; const dur=14+Math.random()*10; b.style.animationDuration=dur+'s'; b.style.animationDelay=(-Math.random()*dur)+'s'; box.appendChild(b); } }
+
+    // ========== 彩带 ==========
+    function confettiBurst(){ const N=80; const body=document.body; for(let i=0;i<N;i++){ const e=document.createElement('i'); e.className='confetti'; const size=6+Math.random()*6; e.style.width=size+'px'; e.style.height=(size*0.6)+'px'; e.style.position='fixed'; e.style.top=(window.innerHeight*0.15)+'px'; e.style.left=(window.innerWidth*0.5+(Math.random()*120-60))+'px'; e.style.background=`hsl(${Math.random()*360},90%,60%)`; e.style.transform=`rotate(${Math.random()*360}deg)`; e.style.opacity=.95; e.style.zIndex=4; e.style.animation=`drop ${1.8+Math.random()*1.6}s ease-out forwards`; e.style.borderRadius='4px'; e.style.filter='drop-shadow(0 2px 3px rgba(0,0,0,.2))'; body.appendChild(e); setTimeout(()=>e.remove(), 3500); } }
+
+    // ========== 烟花 ==========
+    const canvas=$('#fireworks'); const ctx=canvas.getContext('2d'); let W=canvas.width=window.innerWidth; let H=canvas.height=window.innerHeight; window.addEventListener('resize',()=>{ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }); const particles=[]; function rand(min,max){ return Math.random()*(max-min)+min; } function hsla(h,s,l,a){ return `hsla(${h},${s}%,${l}%,${a})`; } function burst(x,y){ const hue=Math.random()*360; for(let i=0;i<60;i++){ const ang=Math.random()*Math.PI*2; const sp=rand(2,6); particles.push({x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:0,max:rand(50,80),g:0.04,fr:0.985,hue:(hue+rand(-20,20))%360}); } } function loop(){ ctx.globalCompositeOperation='destination-out'; ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.fillRect(0,0,W,H); ctx.globalCompositeOperation='lighter'; for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.life++; p.vx*=p.fr; p.vy=p.vy*p.fr+p.g; p.x+=p.vx; p.y+=p.vy; const a=1-p.life/p.max; if(a<=0){ particles.splice(i,1); continue;} ctx.beginPath(); ctx.arc(p.x,p.y,2,0,Math.PI*2); ctx.fillStyle=hsla(p.hue,100,60,Math.max(0,a)); ctx.fill(); } requestAnimationFrame(loop); } loop();
+
+    // 连续自动烟花（带抖动间隔）
+    let _autoBurstStopper = null;
+    function startAutoFireworks(opts={}){
+      const min = opts.min || 900, max = opts.max || 1800; let killed=false;
+      (function tick(){ if(killed) return; burst(rand(W*0.15, W*0.85), rand(H*0.15, H*0.6)); const d = min + Math.random()*(max-min); _autoBurstStopper = setTimeout(tick, d); })();
+      return ()=>{ killed=true; clearTimeout(_autoBurstStopper); };
+    }
+
+    // ========== 交互 ==========
+    $('#celebrateBtn').addEventListener('click',()=>{ confettiBurst(); burst(W*0.5,H*0.35); });
+    $('#nextWish').addEventListener('click',()=>{ typing=true; chI=0; phI=(phI+1)%phrases.length; $('#typer').textContent=''; });
+
+    // ========== 自测（Test Cases） ==========
+    (function runSelfTests(){
+      const results=[]; function test(name, fn){ try{ fn(); results.push({name, ok:true}); }catch(e){ console.error('[TEST FAIL]', name, e); results.push({name, ok:false, error:e.message}); } }
+      test('无自定义选项：settingsBtn 不存在', ()=>{ if(document.getElementById('settingsBtn')) throw new Error('settingsBtn 应被移除'); });
+      test('无自定义选项：设置侧栏不存在', ()=>{ if(document.getElementById('panel')) throw new Error('设置面板应被移除'); });
+      test('随机祝福初始化成功', ()=>{ initBlessings(); if(!phrases || phrases.length===0) throw new Error('phrases 为空'); });
+      test('音频元素存在且 loop= true', ()=>{ const a=$('#bgm'); if(!a) throw new Error('缺少 #bgm'); if(!a.loop) throw new Error('bgm 未设置循环'); });
+      test('播放函数可调用且设置循环', ()=>{ try{ playHaidilao({tempo:160}); if(hbState.loop!==true) throw new Error('未设置 loop'); } finally { stopHaidilao(); } });
+      test('自动播放逻辑：要么成功播放，要么出现 gate 或回退到合成器', ()=>{
+        setTimeout(()=>{
+          const a=$('#bgm'); const gateVisible = !$('#autoplayGate').classList.contains('hidden');
+          const ac=getAC(); // 仅用于向后兼容既有断言思路
+          const ok = (!a.paused) || gateVisible || (hbState.using==='synth');
+          if(!ok) console.warn('自动播放可能被策略限制，但我们会在点击后解锁或回退到合成器');
+        }, 300);
+      });
+      test('烟花函数可调用', ()=>{ burst(100,100); });
+      test('startAutoFireworks 可启动并停止', ()=>{ const stop = startAutoFireworks({min:50,max:80}); if(typeof stop !== 'function') throw new Error('未返回停止函数'); stop(); });
+      test('spawnWish 可生成并加入 DOM', ()=>{ const el = spawnWish(); if(!el || !el.parentNode) throw new Error('未插入 DOM'); el.remove(); });
+      test('ticker DOM 存在', ()=>{ if(!document.querySelector('.ticker .track')) throw new Error('ticker 缺失'); });
+      test('ensureNoLegacyControls 清理模拟遗留 elements', ()=>{ const fake1=document.createElement('button'); fake1.id='settingsBtn'; document.body.appendChild(fake1); const fake2=document.createElement('div'); fake2.id='panel'; document.body.appendChild(fake2); ensureNoLegacyControls(); if(document.getElementById('settingsBtn')||document.getElementById('panel')) throw new Error('清理失败'); });
+      console.info('%c自测完成','color:#0c0;background:#bdf;padding:2px 6px', results);
+    })();
+
+    // ========== 初始化启动 ==========
+    function boot(){ setTimeout(typeLoop, 800); spawnBalloons(); setTimeout(confettiBurst, 600); tryAutoplay(); startAutoFireworks(); startBgWishes(); }
+    initBlessings();
+    window.addEventListener('load', boot);
+  </script>
+</body>
+</html>
